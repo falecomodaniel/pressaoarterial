@@ -216,6 +216,13 @@ replaceOnce(
   [data-v2-card] { background: #fff; border: 1px solid rgba(24,32,31,0.07); border-radius: 22px; box-shadow: 0 8px 28px rgba(18,35,32,0.055); }
   [data-v2-touch] { min-width: 44px; min-height: 44px; }
   [data-v2-input] { min-height: 112px; }
+  /* Convite de instalacao. Quem decide a visibilidade e o pwa.js, que marca
+     <html data-pwa="...">, e nao o ciclo de render do app: o evento
+     beforeinstallprompt normalmente chega depois da primeira renderizacao. */
+  [data-instalar-app], [data-ja-instalado] { display: none; }
+  [data-pwa="instalavel"] [data-instalar-app],
+  [data-pwa="manual"] [data-instalar-app] { display: block; }
+  [data-pwa="instalado-navegador"] [data-ja-instalado] { display: flex; }
   @media (max-width: 380px) {
     [data-v2-input] { min-height: 98px; }
   }
@@ -244,6 +251,22 @@ replaceSection(
   </sc-if>`
 );
 
+const CARD_INSTALAR = `<sc-if value="{{ mostrarInstalar }}" hint-placeholder-val="{{ true }}">
+        <section data-instalar-app="" data-noprint="" style="background: linear-gradient(145deg, rgba(15,107,98,0.09), rgba(15,107,98,0.03)); border: 1px solid rgba(15,107,98,0.2); border-radius: 18px; padding: 15px 16px;">
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <span style="width: 38px; height: 38px; flex-shrink: 0; border-radius: 11px; background: #0F6B62; color: #fff; display: grid; place-items: center;">
+              <svg sc-camel-view-box="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 19h14"></path></svg>
+            </span>
+            <div style="min-width: 0; flex: 1;">
+              <h3 style="margin: 0; font-size: 14.5px; font-weight: 650; color: #0A4C45; letter-spacing: -0.02em;">Tenha o Pressão na tela inicial</h3>
+              <p style="margin: 4px 0 0; font-size: 12px; line-height: 1.45; color: #6A7078;">Abre como aplicativo e funciona mesmo sem internet.</p>
+            </div>
+            <button sc-camel-on-click="{{ dispensarInstalar }}" aria-label="Não mostrar mais este convite" title="Não mostrar mais" style="border: none; background: none; color: #8A8F96; font-size: 20px; line-height: 1; padding: 0 2px; cursor: pointer; flex-shrink: 0;">×</button>
+          </div>
+          <button sc-camel-on-click="{{ instalarApp }}" style="width: 100%; border: none; background: #0F6B62; color: #fff; border-radius: 12px; padding: 12px; font-size: 13.5px; font-weight: 640; cursor: pointer; margin-top: 13px;">Instalar aplicativo</button>
+        </section>
+      </sc-if>`;
+
 replaceSection(
   'início v2',
   '<!-- ===================== INÍCIO',
@@ -260,6 +283,7 @@ replaceSection(
           <p style="margin: 0 0 22px; font-size: 14px; line-height: 1.55; color: rgba(255,255,255,0.8);">Registre sua primeira medição para acompanhar sua evolução com tranquilidade.</p>
           <button sc-camel-on-click="{{ abrirNova }}" style="width: 100%; border: none; background: #fff; color: #0A4C45; border-radius: 15px; padding: 15px; font-size: 15px; font-weight: 650; cursor: pointer;">Nova medição</button>
         </section>
+        ${CARD_INSTALAR}
       </sc-if>
 
       <sc-if value="{{ temRegistros }}" hint-placeholder-val="{{ true }}">
@@ -283,6 +307,8 @@ replaceSection(
           <span style="width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.94); color: #0F766C; display: grid; place-items: center; font-size: 23px; line-height: 1;">+</span>
           Nova medição
         </button>
+
+        ${CARD_INSTALAR}
 
         <section data-v2-card="" style="padding: 18px 16px 12px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
@@ -601,7 +627,10 @@ replaceOnce(
 replaceOnce(
   'ação instalar',
   "      apagarTudo: function () { self.apagarTudo(); },",
-  "      apagarTudo: function () { self.apagarTudo(); },\n      instalarApp: function () { if (window.pressaoPwaInstall) window.pressaoPwaInstall(); },"
+  `      apagarTudo: function () { self.apagarTudo(); },
+      instalarApp: function () { if (window.pressaoPwaInstall) window.pressaoPwaInstall(); },
+      mostrarInstalar: !st.instalarDispensado,
+      dispensarInstalar: function () { self.atualizar({ instalarDispensado: true }); },`
 );
 
 replaceOnce(
@@ -671,7 +700,7 @@ replaceOnce(
 replaceOnce(
   'instalação e contato',
   '      <p style="font-size: 11px; color: #A0A4A9; line-height: 1.6; text-align: center; padding: 0 10px 6px;">Os dados ficam apenas neste navegador. Este app não substitui avaliação médica.</p>',
-  `      <section data-noprint="" style="background: linear-gradient(145deg, rgba(15,107,98,0.09), rgba(15,107,98,0.03)); border: 1px solid rgba(15,107,98,0.2); border-radius: 16px; padding: 16px; text-align: center;">
+  `      <section data-instalar-app="" data-noprint="" style="background: linear-gradient(145deg, rgba(15,107,98,0.09), rgba(15,107,98,0.03)); border: 1px solid rgba(15,107,98,0.2); border-radius: 16px; padding: 16px; text-align: center;">
         <h3 style="margin: 0; font-size: 14px; font-weight: 600; color: #0A4C45;">Use como aplicativo</h3>
         <p style="margin: 6px 0 12px; font-size: 12px; color: #6A7078; line-height: 1.5;">Instale para abrir em uma janela própria e continuar usando mesmo sem internet.</p>
         <button sc-camel-on-click="{{ instalarApp }}" style="width: 100%; border: none; background: #0F6B62; color: #fff; border-radius: 11px; padding: 12px; font-size: 13.5px; font-weight: 600; cursor: pointer;">Instalar aplicativo</button>
@@ -775,19 +804,19 @@ replaceOnce(
 replaceOnce(
   'estado sem lembretes e com preparo',
   "    metas: { sis: 130, dia: 80 },\n    lembretes: [],\n    registros: [],\n    novoLembrete: '08:00',",
-  "    metas: { sis: 130, dia: 80 },\n    registros: [],\n    pularPreparo: false,"
+  "    metas: { sis: 130, dia: 80 },\n    registros: [],\n    pularPreparo: false,\n    instalarDispensado: false,"
 );
 
 replaceOnce(
   'carregamento sem lembretes',
   "          metas: Object.assign({ sis: 130, dia: 80 }, d.metas || {}),\n          lembretes: d.lembretes || [],\n          registros: (d.registros || []).slice().sort(function (a, b) { return new Date(b.quando) - new Date(a.quando); })",
-  "          metas: Object.assign({ sis: 130, dia: 80 }, d.metas || {}),\n          registros: (d.registros || []).slice().sort(function (a, b) { return new Date(b.quando) - new Date(a.quando); }),\n          pularPreparo: !!d.pularPreparo"
+  "          metas: Object.assign({ sis: 130, dia: 80 }, d.metas || {}),\n          registros: (d.registros || []).slice().sort(function (a, b) { return new Date(b.quando) - new Date(a.quando); }),\n          pularPreparo: !!d.pularPreparo,\n          instalarDispensado: !!d.instalarDispensado"
 );
 
 replaceOnce(
   'persistência sem lembretes',
   "    const dados = { versao: 1, perfil: s.perfil, metas: s.metas, lembretes: s.lembretes, registros: s.registros };",
-  "    const dados = { versao: 2, perfil: s.perfil, metas: s.metas, registros: s.registros, pularPreparo: !!s.pularPreparo };"
+  "    const dados = { versao: 2, perfil: s.perfil, metas: s.metas, registros: s.registros, pularPreparo: !!s.pularPreparo, instalarDispensado: !!s.instalarDispensado };"
 );
 
 replaceOnce(
@@ -963,13 +992,18 @@ replaceOnce(
 
 replaceOnce(
   'cartão de privacidade',
-  `      <section data-noprint="" style="background: linear-gradient(145deg, rgba(15,107,98,0.09), rgba(15,107,98,0.03)); border: 1px solid rgba(15,107,98,0.2); border-radius: 16px; padding: 16px; text-align: center;">`,
+  `      <section data-instalar-app="" data-noprint="" style="background: linear-gradient(145deg, rgba(15,107,98,0.09), rgba(15,107,98,0.03)); border: 1px solid rgba(15,107,98,0.2); border-radius: 16px; padding: 16px; text-align: center;">`,
   `      <section style="background:#E7F3F0;border:1px solid rgba(15,107,98,.14);border-radius:16px;padding:16px;display:flex;gap:12px;align-items:flex-start;">
         <span style="width:42px;height:42px;border-radius:14px;background:rgba(255,255,255,.7);color:#0F766C;display:grid;place-items:center;flex-shrink:0;"><svg sc-camel-view-box="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v5c0 5-3.4 8.6-8 10-4.6-1.4-8-5-8-10V6l8-3zM8.5 12l2.2 2.2 4.8-5"></path></svg></span>
         <div><h3 style="margin:1px 0 5px;font-size:14px;font-weight:650;color:#0A4C45;">Seus dados são seus</h3><p style="margin:0;font-size:12px;line-height:1.5;color:#536562;">Tudo fica neste dispositivo. Nada é enviado sem você escolher.</p></div>
       </section>
 
-      <section data-noprint="" style="background: linear-gradient(145deg, rgba(15,107,98,0.09), rgba(15,107,98,0.03)); border: 1px solid rgba(15,107,98,0.2); border-radius: 16px; padding: 16px; text-align: center;">`
+      <div data-ja-instalado="" style="align-items: center; gap: 9px; background: #E7F3F0; border: 1px solid rgba(15,107,98,.14); border-radius: 16px; padding: 13px 15px;">
+        <span style="width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%; background: #0F766C; color: #fff; font-size: 13px; display: grid; place-items: center;">✓</span>
+        <span style="font-size: 12.5px; font-weight: 620; color: #0A4C45;">Você já tem o Pressão instalado neste aparelho.</span>
+      </div>
+
+      <section data-instalar-app="" data-noprint="" style="background: linear-gradient(145deg, rgba(15,107,98,0.09), rgba(15,107,98,0.03)); border: 1px solid rgba(15,107,98,0.2); border-radius: 16px; padding: 16px; text-align: center;">`
 );
 
 replaceOnce(
