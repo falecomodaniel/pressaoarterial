@@ -1,0 +1,6 @@
+*.tar.gz
+node_modules/
+
+# mockups e imagens de trabalho
+design/
+_to_delete/

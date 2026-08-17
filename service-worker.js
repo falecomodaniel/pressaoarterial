@@ -1,12 +1,12 @@
-const CACHE_NAME = 'pressao-pwa-v5';
+const CACHE_NAME = 'pressao-pwa-v6';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
   './pwa.js',
   './social-preview.png',
-  './assets/illustration-preparo.png',
-  './assets/illustration-apoio.png',
+  './assets/illustration-preparo.webp',
+  './assets/illustration-apoio.webp',
   './assets/pix-qrcode.png',
   './icons/icon-48.png',
   './icons/icon-72.png',

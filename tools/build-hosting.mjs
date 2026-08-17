@@ -17,6 +17,9 @@ for (const file of ['index.html', 'manifest.webmanifest', 'pwa.js', 'service-wor
 await cp(join(root, 'icons'), join(client, 'icons'), { recursive: true });
 await cp(join(root, 'assets'), join(client, 'assets'), { recursive: true });
 
+await mkdir(join(dist, '.openai'), { recursive: true });
+await cp(join(root, '.openai', 'hosting.json'), join(dist, '.openai', 'hosting.json'));
+
 const worker = await readFile(join(root, 'worker', 'index.js'), 'utf8');
 await writeFile(join(server, 'index.js'), worker, 'utf8');
 

@@ -312,7 +312,7 @@ replaceSection(
 
       <section data-v2-card="" style="overflow:hidden;padding:0;background:linear-gradient(145deg,#FFFDFC,#F2F8F5);border-color:#DCE9E4;">
         <div style="display:flex;align-items:center;gap:14px;padding:17px 16px;">
-          <img src="assets/illustration-apoio.png" alt="Xícara com coração" style="width:92px;height:92px;object-fit:cover;border-radius:22px;flex-shrink:0;">
+          <img src="assets/illustration-apoio.webp" alt="Xícara com coração" style="width:92px;height:92px;object-fit:cover;border-radius:22px;flex-shrink:0;">
           <div style="min-width:0;">
             <span style="display:inline-block;margin-bottom:7px;padding:4px 8px;border-radius:999px;background:#E4F3EE;color:#0A665D;font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;">Apoio via Pix</span>
             <h3 style="margin:0 0 6px;font-size:17px;line-height:1.2;font-weight:650;color:#17312E;letter-spacing:-.025em;">Vamos manter a pressão estável?</h3>
@@ -858,7 +858,7 @@ replaceOnce(
         <span style="font-size:18px;font-weight:650;letter-spacing:-.02em;">Apoie com Pix</span>
       </header>
       <main style="padding:18px 20px 30px;display:flex;flex-direction:column;gap:14px;">
-        <img src="assets/illustration-apoio.png" alt="Xícara com coração e uma plantinha" style="width:165px;height:165px;object-fit:cover;border-radius:38px;align-self:center;box-shadow:0 14px 34px rgba(15,107,98,.09);">
+        <img src="assets/illustration-apoio.webp" alt="Xícara com coração e uma plantinha" style="width:165px;height:165px;object-fit:cover;border-radius:38px;align-self:center;box-shadow:0 14px 34px rgba(15,107,98,.09);">
         <div style="text-align:center;padding:0 5px;">
           <h1 style="margin:0 0 9px;font-size:24px;line-height:1.18;color:#17312E;letter-spacing:-.035em;">Uma mãozinha faz toda a diferença</h1>
           <p style="margin:0;font-size:14px;line-height:1.58;color:#5E6B68;">Se o Pressão já te ajudou alguma vez, você pode dar uma força para o projeto continuar.</p>
@@ -886,7 +886,7 @@ replaceOnce(
         <span style="font-size:18px;font-weight:650;letter-spacing:-.02em;">Antes de medir</span>
       </header>
       <main style="padding:24px 20px 28px;display:flex;flex-direction:column;gap:14px;">
-        <img src="assets/illustration-preparo.png" alt="Pessoa medindo a pressão com o braço apoiado" style="width:100%;height:230px;object-fit:cover;object-position:center 43%;border-radius:26px;box-shadow:0 12px 30px rgba(15,107,98,.09);">
+        <img src="assets/illustration-preparo.webp" alt="Pessoa medindo a pressão com o braço apoiado" style="width:100%;height:230px;object-fit:cover;object-position:center 43%;border-radius:26px;box-shadow:0 12px 30px rgba(15,107,98,.09);">
         <div style="text-align:center;margin-bottom:2px;"><h1 style="margin:0 0 7px;font-size:23px;line-height:1.2;color:#17312E;letter-spacing:-.03em;">Vamos preparar tudo?</h1><p style="margin:0;font-size:13px;line-height:1.5;color:#6A7774;">Três cuidados rápidos para deixar a medição mais consistente.</p></div>
         <section data-v2-card="" style="padding:4px 16px;">
           <div style="display:flex;align-items:center;gap:13px;padding:15px 0;border-bottom:1px solid #EEEAE3;"><span style="width:42px;height:42px;border-radius:14px;background:#E7F3F0;color:#0F766C;display:grid;place-items:center;font-size:21px;flex-shrink:0;">◷</span><strong style="font-size:15px;font-weight:600;color:#27302E;">Descanse um pouquinho</strong></div>
