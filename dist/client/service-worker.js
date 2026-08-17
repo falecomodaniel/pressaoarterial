@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pressao-pwa-v6';
+const CACHE_NAME = 'pressao-pwa-v7';
 const APP_SHELL = [
   './',
   './index.html',
@@ -20,7 +20,16 @@ const APP_SHELL = [
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
+  // Importante: nao usar cache.addAll(). Ele e tudo-ou-nada — um unico
+  // arquivo com 404 faz a instalacao inteira falhar, e o service worker
+  // antigo continua no comando, deixando o app preso numa versao velha.
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => Promise.all(
+      APP_SHELL.map((url) => cache.add(url).catch((erro) => {
+        console.warn('[pressao-sw] nao foi possivel pre-cachear', url, erro);
+      }))
+    ))
+  );
   self.skipWaiting();
 });
 
