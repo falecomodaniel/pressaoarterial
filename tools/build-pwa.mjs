@@ -1085,6 +1085,548 @@ replaceOnce(
   "      compartilharRelatorio: function () { self.compartilharRelatorio(); },\n      imprimir: function () { window.print(); }"
 );
 
+replaceOnce(
+  'cálculos da análise v2',
+  "    let relatorioNota = 'Não há medições no período selecionado.';",
+  `    // ===================== ANÁLISE V2 =====================
+    const el = React.createElement;
+    const COR_SIS = '#BE4A2E', COR_DIA = '#118C7D', COR_PULSO = '#6B5CA5';
+    const FAIXAS_V2 = [
+      { de: 0, ate: 120, cor: '#2E7D57', rot: 'normal' },
+      { de: 120, ate: 140, cor: '#B98218', rot: 'pré-hipertensão' },
+      { de: 140, ate: 160, cor: '#D2762C', rot: 'estágio 1' },
+      { de: 160, ate: 400, cor: '#BE4A2E', rot: 'estágio 2' }
+    ];
+    const svgTexto = function (k, x, y, txt, cor, tam, ancora, halo) {
+      const p = { key: k, x: x, y: y, fill: cor, fontSize: tam, textAnchor: ancora || 'start', fontFamily: 'Inter, sans-serif' };
+      if (halo) { p.stroke = '#fff'; p.strokeWidth = 2.6; p.paintOrder = 'stroke'; p.strokeLinejoin = 'round'; }
+      return el('text', p, txt);
+    };
+    const svgNum = function (k, x, y, txt, cor, tam, ancora, peso) {
+      return el('text', { key: k, x: x, y: y, fill: cor, fontSize: tam, textAnchor: ancora || 'start', fontWeight: peso || 400, fontFamily: 'IBM Plex Mono, monospace' }, txt);
+    };
+    const nivelSel = function (total) {
+      const s = Number(st.pontoSel);
+      if (!total) return -1;
+      if (!isFinite(s) || s < 0) return -1;
+      return Math.min(total - 1, Math.floor(s));
+    };
+
+    // ---- gráfico principal de pressão ----
+    const metaSisNum = Number(st.metas.sis) || 130;
+    const metaDiaNum = Number(st.metas.dia) || 80;
+    const maxSisV2 = sisList.length ? Math.max.apply(null, sisList) : 140;
+    const minDiaV2 = diaList.length ? Math.min.apply(null, diaList) : 70;
+    const paHi = Math.ceil(Math.max(maxSisV2 + 8, metaSisNum + 12, 150) / 10) * 10;
+    const paLo = Math.floor(Math.min(minDiaV2 - 8, 70) / 10) * 10;
+    const PA_W = 320, PA_H = 196, PA_ML = 30, PA_MR = 42, PA_MT = 14, PA_MB = 26;
+    const paIW = PA_W - PA_ML - PA_MR, paIH = PA_H - PA_MT - PA_MB;
+    const paY = function (v) { return PA_MT + paIH - (Math.max(paLo, Math.min(paHi, v)) - paLo) / (paHi - paLo) * paIH; };
+    const paX = function (i) { return n <= 1 ? PA_ML + paIW / 2 : PA_ML + (i / (n - 1)) * paIW; };
+    const paSel = nivelSel(n);
+    const graficoPA = (function () {
+      if (!n) return null;
+      const filhos = [];
+      filhos.push(el('defs', { key: 'defs' }, el('linearGradient', { id: 'gradPA', x1: '0', y1: '0', x2: '0', y2: '1' }, [
+        el('stop', { key: 'a', offset: '0%', stopColor: COR_SIS, stopOpacity: 0.3 }),
+        el('stop', { key: 'b', offset: '100%', stopColor: COR_DIA, stopOpacity: 0.24 })
+      ])));
+      FAIXAS_V2.forEach(function (f, i) {
+        const de = Math.max(f.de, paLo), ate = Math.min(f.ate, paHi);
+        if (ate <= de) return;
+        const yTopo = paY(ate), altura = paY(de) - paY(ate);
+        filhos.push(el('rect', { key: 'fx' + i, x: PA_ML, y: yTopo, width: paIW, height: altura, fill: f.cor, opacity: 0.045 }));
+        if (altura >= 18) filhos.push(svgTexto('fr' + i, PA_ML + 4, yTopo + 10, f.rot, '#9DA39C', 7.5, 'start', true));
+      });
+      const passoY = (paHi - paLo) > 60 ? 20 : 10;
+      for (let v = paLo; v <= paHi; v += passoY) {
+        filhos.push(el('line', { key: 'gl' + v, x1: PA_ML, y1: paY(v), x2: PA_ML + paIW, y2: paY(v), stroke: '#EDEAE3', strokeWidth: 1 }));
+        filhos.push(svgNum('gt' + v, PA_ML - 6, paY(v) + 3, String(v), '#A9AEA8', 8.5, 'end'));
+      }
+      if (n > 1) {
+        const ptsSis = doPeriodo.map(function (r, i) { return paX(i).toFixed(1) + ',' + paY(Number(r.sis)).toFixed(1); });
+        const ptsDia = doPeriodo.map(function (r, i) { return paX(i).toFixed(1) + ',' + paY(Number(r.dia)).toFixed(1); });
+        filhos.push(el('path', { key: 'banda', d: 'M' + ptsSis.join(' L') + ' L' + ptsDia.slice().reverse().join(' L') + ' Z', fill: 'url(#gradPA)' }));
+        filhos.push(el('path', { key: 'ls', d: 'M' + ptsSis.join(' L'), fill: 'none', stroke: COR_SIS, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }));
+        filhos.push(el('path', { key: 'ld', d: 'M' + ptsDia.join(' L'), fill: 'none', stroke: COR_DIA, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }));
+      }
+      if (metaSisNum > paLo && metaSisNum < paHi) {
+        filhos.push(el('line', { key: 'meta', x1: PA_ML, y1: paY(metaSisNum), x2: PA_ML + paIW, y2: paY(metaSisNum), stroke: '#9AA0A6', strokeWidth: 1.4, strokeDasharray: '4 4' }));
+        filhos.push(svgTexto('metat', PA_ML + paIW, paY(metaSisNum) - 5, 'meta ' + metaSisNum, '#9AA0A6', 8, 'end', true));
+      }
+      const ult = doPeriodo[n - 1];
+      filhos.push(el('circle', { key: 'cs', cx: paX(n - 1), cy: paY(Number(ult.sis)), r: 4, fill: COR_SIS, stroke: '#fff', strokeWidth: 2 }));
+      filhos.push(el('circle', { key: 'cd', cx: paX(n - 1), cy: paY(Number(ult.dia)), r: 4, fill: COR_DIA, stroke: '#fff', strokeWidth: 2 }));
+      filhos.push(svgNum('ts', paX(n - 1) + 8, paY(Number(ult.sis)) + 3, String(ult.sis), COR_SIS, 10.5, 'start', 600));
+      filhos.push(svgNum('td', paX(n - 1) + 8, paY(Number(ult.dia)) + 3, String(ult.dia), COR_DIA, 10.5, 'start', 600));
+      const passoX = Math.max(1, Math.ceil(n / 4));
+      doPeriodo.forEach(function (r, i) {
+        if (i % passoX !== 0 && i !== n - 1) return;
+        const d = new Date(r.quando);
+        const ancora = i === 0 ? 'start' : (i === n - 1 ? 'end' : 'middle');
+        filhos.push(svgTexto('ex' + i, paX(i), PA_MT + paIH + 15, pad(d.getDate()) + '/' + pad(d.getMonth() + 1), '#A9AEA8', 8.5, ancora));
+      });
+      if (paSel >= 0) {
+        const r = doPeriodo[paSel], x = paX(paSel);
+        const cSel = classificar(Number(r.sis), Number(r.dia));
+        const dt = new Date(r.quando);
+        const linha1 = pad(dt.getDate()) + '/' + pad(dt.getMonth() + 1) + ' · ' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());
+        const linha2 = r.sis + '/' + r.dia + ' mmHg' + (r.pulso ? ' · ' + r.pulso + ' bpm' : '');
+        const larg = Math.max(96, linha2.length * 5.4, (CURTA[cSel] || '').length * 5.2);
+        const bx = Math.max(PA_ML, Math.min(PA_W - PA_MR - larg, x - larg / 2));
+        filhos.push(el('line', { key: 'cross', x1: x, y1: PA_MT, x2: x, y2: PA_MT + paIH, stroke: '#C9C4B9', strokeWidth: 1 }));
+        filhos.push(el('circle', { key: 'ss', cx: x, cy: paY(Number(r.sis)), r: 3.6, fill: '#fff', stroke: COR_SIS, strokeWidth: 2 }));
+        filhos.push(el('circle', { key: 'sd', cx: x, cy: paY(Number(r.dia)), r: 3.6, fill: '#fff', stroke: COR_DIA, strokeWidth: 2 }));
+        filhos.push(el('rect', { key: 'tipbg', x: bx, y: PA_MT + 2, width: larg, height: 40, rx: 8, fill: '#17201F', opacity: 0.94 }));
+        filhos.push(svgTexto('tip1', bx + 8, PA_MT + 15, linha1, 'rgba(255,255,255,.7)', 8));
+        filhos.push(svgNum('tip2', bx + 8, PA_MT + 27, linha2, '#fff', 9.5, 'start', 600));
+        filhos.push(svgTexto('tip3', bx + 8, PA_MT + 38, CURTA[cSel] || '', CATS[cSel] || '#fff', 8.5));
+      }
+      const aoTocar = function (e) {
+        const alvo = e.currentTarget.getBoundingClientRect();
+        const cx = (e.clientX != null ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0));
+        const rel = ((cx - alvo.left) / alvo.width) * PA_W;
+        const idx = n <= 1 ? 0 : Math.round(((rel - PA_ML) / paIW) * (n - 1));
+        const novo = Math.max(0, Math.min(n - 1, idx));
+        self.setState({ pontoSel: novo === paSel ? null : novo });
+      };
+      return el('svg', {
+        viewBox: '0 0 ' + PA_W + ' ' + PA_H,
+        style: { width: '100%', height: 'auto', display: 'block', overflow: 'visible', cursor: 'pointer' },
+        onClick: aoTocar
+      }, filhos);
+    })();
+
+    // ---- gráfico de frequência cardíaca ----
+    const pulsos = comPulso.map(function (r) { return Number(r.pulso); });
+    const fcN = pulsos.length;
+    const fcMedia = mPulso;
+    const fcMin = fcN ? Math.min.apply(null, pulsos) : null;
+    const fcMax = fcN ? Math.max.apply(null, pulsos) : null;
+    const fcRepouso = pulsos.filter(function (v) { return v >= 60 && v <= 100; }).length;
+    const FC_W = 320, FC_H = 124, FC_ML = 30, FC_MR = 42, FC_MT = 12, FC_MB = 24;
+    const fcIW = FC_W - FC_ML - FC_MR, fcIH = FC_H - FC_MT - FC_MB;
+    const fcHi = Math.ceil(Math.max((fcMax || 100) + 6, 106) / 10) * 10;
+    const fcLo = Math.floor(Math.min((fcMin || 60) - 6, 54) / 10) * 10;
+    const fcY = function (v) { return FC_MT + fcIH - (Math.max(fcLo, Math.min(fcHi, v)) - fcLo) / (fcHi - fcLo) * fcIH; };
+    const fcX = function (i) { return fcN <= 1 ? FC_ML + fcIW / 2 : FC_ML + (i / (fcN - 1)) * fcIW; };
+    const graficoFC = (function () {
+      if (!fcN) return null;
+      const filhos = [];
+      filhos.push(el('defs', { key: 'defs' }, el('linearGradient', { id: 'gradFC', x1: '0', y1: '0', x2: '0', y2: '1' }, [
+        el('stop', { key: 'a', offset: '0%', stopColor: COR_PULSO, stopOpacity: 0.2 }),
+        el('stop', { key: 'b', offset: '100%', stopColor: COR_PULSO, stopOpacity: 0.02 })
+      ])));
+      const rTopo = fcY(Math.min(100, fcHi)), rBase = fcY(Math.max(60, fcLo));
+      filhos.push(el('rect', { key: 'faixa', x: FC_ML, y: rTopo, width: fcIW, height: Math.max(0, rBase - rTopo), fill: COR_PULSO, opacity: 0.05 }));
+      filhos.push(svgTexto('faixat', FC_ML + 4, rTopo + 10, 'faixa de repouso', '#9DA39C', 7.5, 'start', true));
+      const passoFc = (fcHi - fcLo) > 60 ? 20 : 10;
+      for (let v = fcLo; v <= fcHi; v += passoFc) {
+        filhos.push(el('line', { key: 'g' + v, x1: FC_ML, y1: fcY(v), x2: FC_ML + fcIW, y2: fcY(v), stroke: '#EDEAE3', strokeWidth: 1 }));
+        filhos.push(svgNum('gt' + v, FC_ML - 6, fcY(v) + 3, String(v), '#A9AEA8', 8.5, 'end'));
+      }
+      if (fcN > 1) {
+        const pts = pulsos.map(function (v, i) { return fcX(i).toFixed(1) + ',' + fcY(v).toFixed(1); });
+        filhos.push(el('path', { key: 'area', d: 'M' + pts.join(' L') + ' L' + fcX(fcN - 1).toFixed(1) + ',' + fcY(fcLo).toFixed(1) + ' L' + fcX(0).toFixed(1) + ',' + fcY(fcLo).toFixed(1) + ' Z', fill: 'url(#gradFC)' }));
+        filhos.push(el('path', { key: 'linha', d: 'M' + pts.join(' L'), fill: 'none', stroke: COR_PULSO, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }));
+      }
+      if (fcMedia) filhos.push(el('line', { key: 'med', x1: FC_ML, y1: fcY(fcMedia), x2: FC_ML + fcIW, y2: fcY(fcMedia), stroke: COR_PULSO, strokeWidth: 1.2, strokeDasharray: '3 4', opacity: 0.55 }));
+      filhos.push(el('circle', { key: 'cf', cx: fcX(fcN - 1), cy: fcY(pulsos[fcN - 1]), r: 4, fill: COR_PULSO, stroke: '#fff', strokeWidth: 2 }));
+      filhos.push(svgNum('tf', fcX(fcN - 1) + 8, fcY(pulsos[fcN - 1]) + 3, String(pulsos[fcN - 1]), COR_PULSO, 10.5, 'start', 600));
+      const dIni = new Date(comPulso[0].quando), dFim = new Date(comPulso[fcN - 1].quando);
+      filhos.push(svgTexto('xi', FC_ML, FC_MT + fcIH + 15, pad(dIni.getDate()) + '/' + pad(dIni.getMonth() + 1), '#A9AEA8', 8.5));
+      filhos.push(svgTexto('xf', FC_ML + fcIW, FC_MT + fcIH + 15, pad(dFim.getDate()) + '/' + pad(dFim.getMonth() + 1), '#A9AEA8', 8.5, 'end'));
+      return el('svg', { viewBox: '0 0 ' + FC_W + ' ' + FC_H, style: { width: '100%', height: 'auto', display: 'block', overflow: 'visible' } }, filhos);
+    })();
+
+    // ---- esta semana x semana anterior ----
+    const semAtual = this.noPeriodo(7);
+    const semAnterior = (function () {
+      const fim = Date.now() - 7 * 86400000;
+      const ini = fim - 7 * 86400000;
+      return st.registros.filter(function (r) { const t = new Date(r.quando).getTime(); return t >= ini && t < fim; });
+    })();
+    const temSemana = semAtual.length > 0 || semAnterior.length > 0;
+    const DIAS_SEM = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
+    const porDiaSemana = function (lista) {
+      const soma = [0, 0, 0, 0, 0, 0, 0], qtd = [0, 0, 0, 0, 0, 0, 0];
+      lista.forEach(function (r) {
+        const d = new Date(r.quando);
+        const idx = (d.getDay() + 6) % 7;
+        soma[idx] += Number(r.sis); qtd[idx]++;
+      });
+      return soma.map(function (s, i) { return qtd[i] ? Math.round(s / qtd[i]) : null; });
+    };
+    const serieAtual = porDiaSemana(semAtual);
+    const serieAnterior = porDiaSemana(semAnterior);
+    const graficoSemana = (function () {
+      if (!temSemana) return null;
+      const todos = serieAtual.concat(serieAnterior).filter(function (v) { return v != null; });
+      if (!todos.length) return null;
+      const hi = Math.ceil((Math.max.apply(null, todos) + 6) / 10) * 10;
+      const lo = Math.floor((Math.min.apply(null, todos) - 6) / 10) * 10;
+      const W = 320, H = 116, ML = 28, MR = 14, MT = 12, MB = 22;
+      const iw = W - ML - MR, ih = H - MT - MB;
+      const Y = function (v) { return hi === lo ? MT + ih / 2 : MT + ih - (v - lo) / (hi - lo) * ih; };
+      const X = function (i) { return ML + (i / 6) * iw; };
+      const filhos = [];
+      const passo = (hi - lo) > 40 ? 20 : 10;
+      for (let v = lo; v <= hi; v += passo) {
+        filhos.push(el('line', { key: 'g' + v, x1: ML, y1: Y(v), x2: ML + iw, y2: Y(v), stroke: '#EFECE5', strokeWidth: 1 }));
+        filhos.push(svgNum('gt' + v, ML - 6, Y(v) + 3, String(v), '#AFB4AE', 8, 'end'));
+      }
+      const traco = function (serie, cor, tracejado, chave) {
+        const pts = [];
+        serie.forEach(function (v, i) { if (v != null) pts.push(X(i).toFixed(1) + ',' + Y(v).toFixed(1)); });
+        if (pts.length < 2) return null;
+        return el('path', { key: chave, d: 'M' + pts.join(' L'), fill: 'none', stroke: cor, strokeWidth: tracejado ? 2 : 2.2, strokeDasharray: tracejado ? '4 4' : undefined, strokeLinecap: 'round', strokeLinejoin: 'round' });
+      };
+      const tAnt = traco(serieAnterior, '#C3BFB4', true, 'ant');
+      const tAtu = traco(serieAtual, '#4A5058', false, 'atu');
+      if (tAnt) filhos.push(tAnt);
+      if (tAtu) filhos.push(tAtu);
+      serieAtual.forEach(function (v, i) {
+        if (v == null) return;
+        filhos.push(el('circle', { key: 'p' + i, cx: X(i), cy: Y(v), r: 3, fill: '#fff', stroke: '#4A5058', strokeWidth: 2 }));
+      });
+      DIAS_SEM.forEach(function (d, i) { filhos.push(svgTexto('d' + i, X(i), MT + ih + 14, d, '#A9AEA8', 8.5, 'middle')); });
+      return el('svg', { viewBox: '0 0 ' + W + ' ' + H, style: { width: '100%', height: 'auto', display: 'block', overflow: 'visible' } }, filhos);
+    })();
+    const linhaSemana = function (rotulo, campo, unidade, menorEhMelhor) {
+      const a = self.media(semAnterior, campo), b = self.media(semAtual, campo);
+      if (b == null) return { rotulo: rotulo, valor: '—', anterior: a == null ? '' : String(a), temAnterior: a != null, delta: 'sem base', deltaCor: '#7A807D', deltaBg: '#F2F0EA' };
+      if (a == null) return { rotulo: rotulo, valor: String(b) + unidade, anterior: '', temAnterior: false, delta: 'novo', deltaCor: '#7A807D', deltaBg: '#F2F0EA' };
+      const d = b - a;
+      const bom = menorEhMelhor ? d < 0 : d > 0;
+      const neutro = Math.abs(d) < 1;
+      return {
+        rotulo: rotulo, valor: String(b) + unidade, anterior: String(a), temAnterior: true,
+        delta: (d > 0 ? '+' : '') + d,
+        deltaCor: neutro ? '#7A807D' : (bom ? '#2E7D57' : '#BE4A2E'),
+        deltaBg: neutro ? '#F2F0EA' : (bom ? '#E6F1EA' : '#F8E8E3')
+      };
+    };
+    const comparativoSemana = [
+      linhaSemana('Sistólica', 'sis', '', true),
+      linhaSemana('Diastólica', 'dia', '', true),
+      linhaSemana('Pulso', 'pulso', '', true),
+      (function () {
+        const a = semAnterior.length, b = semAtual.length, d = b - a;
+        return {
+          rotulo: 'Medições', valor: String(b), anterior: String(a), temAnterior: true,
+          delta: (d > 0 ? '+' : '') + d,
+          deltaCor: d > 0 ? '#2E7D57' : (d < 0 ? '#BE4A2E' : '#7A807D'),
+          deltaBg: d > 0 ? '#E6F1EA' : (d < 0 ? '#F8E8E3' : '#F2F0EA')
+        };
+      })()
+    ];
+    const rotuloSemana = (function () {
+      const hoje = new Date();
+      const f = function (dd) { const d = new Date(hoje.getTime() - dd * 86400000); return pad(d.getDate()) + '/' + pad(d.getMonth() + 1); };
+      return f(6) + '–' + f(0) + ' vs. ' + f(13) + '–' + f(7);
+    })();
+
+    // ---- manhã / tarde / noite ----
+    const FAIXAS_HORA = [
+      { rotulo: 'Manhã', de: 5, ate: 12 },
+      { rotulo: 'Tarde', de: 12, ate: 18 },
+      { rotulo: 'Noite', de: 18, ate: 29 }
+    ];
+    const porHorario = FAIXAS_HORA.map(function (f) {
+      const lista = doPeriodo.filter(function (r) {
+        let h = new Date(r.quando).getHours();
+        if (h < 5) h += 24;
+        return h >= f.de && h < f.ate;
+      });
+      return { rotulo: f.rotulo, qtd: lista.length, sis: self.media(lista, 'sis'), dia: self.media(lista, 'dia') };
+    });
+    const horariosComDados = porHorario.filter(function (h) { return h.qtd > 0; });
+    const temHorarios = horariosComDados.length >= 2;
+    const graficoHorarios = (function () {
+      if (!temHorarios) return null;
+      const vals = [];
+      horariosComDados.forEach(function (h) { vals.push(h.sis); vals.push(h.dia); });
+      const hi = Math.max.apply(null, vals) + 6, lo = Math.min.apply(null, vals) - 6;
+      const W = 320, ML = 46, MR = 62, linhaAlt = 34;
+      const H = horariosComDados.length * linhaAlt + 6;
+      const iw = W - ML - MR;
+      const X = function (v) { return hi === lo ? ML + iw / 2 : ML + (v - lo) / (hi - lo) * iw; };
+      const filhos = [];
+      horariosComDados.forEach(function (h, i) {
+        const y = 18 + i * linhaAlt;
+        filhos.push(svgTexto('r' + i, 0, y + 4, h.rotulo, '#4A5058', 11));
+        filhos.push(el('line', { key: 't' + i, x1: ML, y1: y, x2: ML + iw, y2: y, stroke: '#F0EEE8', strokeWidth: 3, strokeLinecap: 'round' }));
+        filhos.push(el('line', { key: 's' + i, x1: X(h.dia), y1: y, x2: X(h.sis), y2: y, stroke: '#D6D1C6', strokeWidth: 3, strokeLinecap: 'round' }));
+        filhos.push(el('circle', { key: 'cd' + i, cx: X(h.dia), cy: y, r: 6, fill: COR_DIA, stroke: '#fff', strokeWidth: 2.4 }));
+        filhos.push(el('circle', { key: 'cs' + i, cx: X(h.sis), cy: y, r: 6, fill: COR_SIS, stroke: '#fff', strokeWidth: 2.4 }));
+        filhos.push(svgNum('v' + i, W, y + 4, h.sis + '/' + h.dia, '#17201F', 11.5, 'end', 600));
+      });
+      return el('svg', { viewBox: '0 0 ' + W + ' ' + H, style: { width: '100%', height: 'auto', display: 'block', overflow: 'visible' } }, filhos);
+    })();
+    const notaHorarios = (function () {
+      if (!temHorarios) return '';
+      const manha = porHorario[0], noite = porHorario[2];
+      if (!manha.qtd || !noite.qtd) return 'Registre medições em horários diferentes para comparar os períodos do dia.';
+      const d = manha.sis - noite.sis;
+      if (Math.abs(d) < 5) return 'Suas médias de manhã e de noite são parecidas (diferença de ' + Math.abs(d) + ' mmHg na sistólica).';
+      if (d > 0) return 'Suas medições da manhã estão em média ' + d + ' mmHg acima das da noite — vale mostrar esse padrão ao seu médico.';
+      return 'Suas medições da noite estão em média ' + Math.abs(d) + ' mmHg acima das da manhã — vale mostrar esse padrão ao seu médico.';
+    })();
+
+    // ---- regularidade (30 dias) ----
+    const CHAVE_DIA = function (t) { const d = new Date(t); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
+    const diasComRegistro = {};
+    st.registros.forEach(function (r) { diasComRegistro[CHAVE_DIA(r.quando)] = true; });
+    const hojeBase = new Date();
+    const regularidade = [];
+    let diasMarcados = 0, sequenciaAtual = 0, maiorSequencia = 0;
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(hojeBase.getFullYear(), hojeBase.getMonth(), hojeBase.getDate() - i);
+      const tem = !!diasComRegistro[CHAVE_DIA(d)];
+      if (tem) { diasMarcados++; sequenciaAtual++; if (sequenciaAtual > maiorSequencia) maiorSequencia = sequenciaAtual; }
+      else sequenciaAtual = 0;
+      regularidade.push({ cor: tem ? COR_DIA : '#EDEAE3', opacidade: tem ? 0.85 : 1, titulo: pad(d.getDate()) + '/' + pad(d.getMonth() + 1) });
+    }
+    const notaRegularidade = diasMarcados + ' de 30 dias com pelo menos uma medição. Maior sequência: ' + maiorSequencia + (maiorSequencia === 1 ? ' dia.' : ' dias seguidos.');
+
+    // ---- distribuição em barra empilhada ----
+    const distribuicaoV2 = ORDEM.map(function (c) {
+      const qtd = contagem[c] || 0;
+      return { nome: CURTA[c], cor: CATS[c], qtd: qtd, largura: n ? (qtd / n) * 100 + '%' : '0%', resumo: qtd + ' · ' + (n ? Math.round((qtd / n) * 100) : 0) + '%' };
+    }).filter(function (d) { return d.qtd > 0; });
+    const distribuicaoV2Ordenada = distribuicaoV2.slice().sort(function (a, b) { return b.qtd - a.qtd; });
+
+    // ---- pressão de pulso e métricas ----
+    const pressaoPulso = n ? Math.round(doPeriodo.reduce(function (a, r) { return a + (Number(r.sis) - Number(r.dia)); }, 0) / n) : null;
+    const dataDe = function (idx) {
+      if (idx < 0) return '';
+      const d = new Date(doPeriodo[idx].quando);
+      return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + ' · ' + pad(d.getHours()) + 'h' + pad(d.getMinutes());
+    };
+    const metricasV2 = [
+      { rotulo: 'Máxima', valor: maxIdx >= 0 ? doPeriodo[maxIdx].sis + '/' + doPeriodo[maxIdx].dia : '—', nota: maxIdx >= 0 ? dataDe(maxIdx) : 'sem medições', cor: COR_SIS },
+      { rotulo: 'Mínima', valor: minIdx >= 0 ? doPeriodo[minIdx].sis + '/' + doPeriodo[minIdx].dia : '—', nota: minIdx >= 0 ? dataDe(minIdx) : 'sem medições', cor: '#2E7D57' },
+      { rotulo: 'Pulso médio', valor: mPulso ? mPulso + ' bpm' : '—', nota: 'frequência cardíaca', cor: COR_PULSO },
+      { rotulo: 'Pressão de pulso', valor: pressaoPulso ? pressaoPulso + ' mmHg' : '—', nota: 'faixa usual: 40–60', cor: '#17201F' }
+    ];
+
+    // ---- cabeçalho do período ----
+    const deltaSisPeriodo = (function () {
+      const a = self.media(anterior, 'sis'), b = mSis;
+      if (a == null || b == null) return null;
+      return { sis: b - a, dia: (self.media(doPeriodo, 'dia') || 0) - (self.media(anterior, 'dia') || 0) };
+    })();
+    const temDeltaPeriodo = !!deltaSisPeriodo;
+    const deltaTexto = deltaSisPeriodo ? ((deltaSisPeriodo.sis > 0 ? '+' : '') + deltaSisPeriodo.sis + '/' + (deltaSisPeriodo.dia > 0 ? '+' : '') + deltaSisPeriodo.dia) : '';
+    const deltaCor = deltaSisPeriodo ? (deltaSisPeriodo.sis < -1 ? '#2E7D57' : (deltaSisPeriodo.sis > 1 ? '#BE4A2E' : '#7A807D')) : '#7A807D';
+    const diasDistintos = (function () {
+      const vistos = {};
+      doPeriodo.forEach(function (r) { vistos[CHAVE_DIA(r.quando)] = true; });
+      return Object.keys(vistos).length;
+    })();
+    const resumoPeriodo = n
+      ? n + (n === 1 ? ' medição' : ' medições') + ' em ' + diasDistintos + (st.periodo ? ' dos ' + st.periodo + ' dias' : (diasDistintos === 1 ? ' dia' : ' dias'))
+      : 'Registre uma medição para ver a análise';
+    const rotuloPeriodo = st.periodo ? 'Média de ' + st.periodo + ' dias' : 'Média do histórico';
+    const metaPct = n ? Math.round((naMeta / n) * 100) + '%' : '—';
+
+    let relatorioNota = 'Não há medições no período selecionado.';`
+);
+
+replaceOnce(
+  'dados da análise v2',
+  "      resumoRelatorio: [",
+  `      graficoPA: graficoPA,
+      graficoFC: graficoFC,
+      temGraficoFC: fcN > 0,
+      fcMediaTxt: fcMedia ? String(fcMedia) : '—',
+      fcFaixaTxt: fcN ? fcMin + ' · ' + fcMax : '—',
+      fcRepousoTxt: fcN ? fcRepouso + '/' + fcN : '—',
+      graficoSemana: graficoSemana,
+      temGraficoSemana: !!graficoSemana,
+      temSemana: temSemana,
+      comparativoSemana: comparativoSemana,
+      rotuloSemana: rotuloSemana,
+      graficoHorarios: graficoHorarios,
+      temHorarios: temHorarios,
+      notaHorarios: notaHorarios,
+      regularidade: regularidade,
+      notaRegularidade: notaRegularidade,
+      distribuicaoV2: distribuicaoV2,
+      distribuicaoV2Ordenada: distribuicaoV2Ordenada,
+      metricasV2: metricasV2,
+      temDeltaPeriodo: temDeltaPeriodo,
+      deltaTexto: deltaTexto,
+      deltaCor: deltaCor,
+      resumoPeriodo: resumoPeriodo,
+      rotuloPeriodo: rotuloPeriodo,
+      metaPct: metaPct,
+      resumoRelatorio: [`
+);
+
+replaceSection(
+  'análise v2',
+  '<!-- ===================== ANÁLISE',
+  '<!-- ===================== MAIS',
+  `<!-- ===================== ANÁLISE ===================== -->
+  <sc-if value="{{ ehAnalise }}" hint-placeholder-val="{{ false }}">
+    <main style="padding: 18px 18px 8px; display: flex; flex-direction: column; gap: 12px; animation: riseIn 0.42s cubic-bezier(0.2,0.7,0.3,1) both;">
+
+      <button sc-camel-on-click="{{ irRelatorio }}" data-noprint="" style="border: none; background: #0F766C; color: #fff; border-radius: 14px; padding: 15px; font-size: 14.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 9px; box-shadow: 0 5px 16px rgba(15,118,108,.24);">
+        <svg sc-camel-view-box="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h11l5 5v11a1 1 0 01-1 1H5a1 1 0 01-1-1V5a1 1 0 011-1z"></path><path d="M14 4v6h6M8 14h8M8 17.5h5"></path></svg>
+        Relatório para o médico
+      </button>
+
+      <div data-noprint="" style="display: flex; gap: 5px; background: #E9E6DF; padding: 4px; border-radius: 12px;">
+        <sc-for list="{{ periodos }}" as="p" hint-placeholder-count="4">
+          <button sc-camel-on-click="{{ p.acao }}" style="flex: 1; border: none; background: {{ p.bg }}; color: {{ p.cor }}; box-shadow: {{ p.sombra }}; border-radius: 9px; padding: 8px 4px; font-size: 12.5px; font-weight: 500; cursor: pointer; transition: all 0.2s ease;">{{ p.rotulo }}</button>
+        </sc-for>
+      </div>
+
+      <section style="background: #fff; border: 1px solid #E3DFD7; border-radius: 18px; padding: 18px 16px; text-align: center;">
+        <span style="font-size: 10.5px; letter-spacing: 0.13em; text-transform: uppercase; color: #8A8F96; font-weight: 600;">{{ rotuloPeriodo }}</span>
+        <p style="margin: 8px 0 2px; font-family: 'IBM Plex Mono', monospace; font-size: 44px; font-weight: 500; letter-spacing: -0.03em; line-height: 1; color: {{ mediaCor }};">{{ mediaLeitura }}</p>
+        <span style="font-size: 13px; font-weight: 600; color: {{ mediaCor }};">{{ mediaCat }}</span>
+        <div style="display: flex; gap: 6px; justify-content: center; margin-top: 13px; flex-wrap: wrap;">
+          <sc-if value="{{ temDeltaPeriodo }}" hint-placeholder-val="{{ false }}">
+            <span style="display: flex; align-items: center; gap: 5px; background: #F5F3EE; border: 1px solid #EAE6DD; border-radius: 999px; padding: 5px 10px; font-size: 11.5px; color: #4A5058;">vs. anterior <strong style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: {{ deltaCor }};">{{ deltaTexto }}</strong></span>
+          </sc-if>
+          <span style="display: flex; align-items: center; gap: 5px; background: #F5F3EE; border: 1px solid #EAE6DD; border-radius: 999px; padding: 5px 10px; font-size: 11.5px; color: #4A5058;">meta <strong style="font-family: 'IBM Plex Mono', monospace; font-weight: 600;">{{ metaPct }}</strong></span>
+        </div>
+        <sc-if value="{{ mediaTemExplicacao }}" hint-placeholder-val="{{ false }}">
+          <p style="margin: 13px auto 0; max-width: 320px; font-size: 12.5px; line-height: 1.55; color: #4A5058; text-wrap: pretty;">{{ mediaExplicacao }}</p>
+        </sc-if>
+        <p style="margin: 12px 0 0; font-size: 11.5px; color: #8A8F96;">{{ resumoPeriodo }}</p>
+      </section>
+
+      <section style="background: #fff; border: 1px solid #E3DFD7; border-radius: 18px; padding: 16px 14px;">
+        <div style="margin-bottom: 12px;">
+          <h2 style="margin: 0; font-size: 14.5px; font-weight: 600;">Pressão arterial</h2>
+          <p style="margin: 2px 0 0; font-size: 11.5px; color: #8A8F96;">mmHg · faixa entre sistólica e diastólica</p>
+        </div>
+        <sc-if value="{{ graficoVazio }}" hint-placeholder-val="{{ false }}">
+          <p style="text-align: center; color: #8A8F96; font-size: 13px; padding: 40px 20px;">Sem medições neste período.</p>
+        </sc-if>
+        <sc-if value="{{ graficoTem }}" hint-placeholder-val="{{ true }}">
+          <div>{{ graficoPA }}</div>
+          <div style="display: flex; gap: 12px; font-size: 10.5px; color: #6A7078; margin-top: 10px; flex-wrap: wrap;">
+            <span style="display: flex; align-items: center; gap: 5px;"><i style="width: 13px; height: 3px; background: #BE4A2E; display: block; border-radius: 2px;"></i>Sistólica</span>
+            <span style="display: flex; align-items: center; gap: 5px;"><i style="width: 13px; height: 3px; background: #118C7D; display: block; border-radius: 2px;"></i>Diastólica</span>
+            <span style="display: flex; align-items: center; gap: 5px;"><i style="width: 13px; height: 0; border-top: 2px dashed #9AA0A6; display: block;"></i>Sua meta</span>
+          </div>
+          <p style="margin: 8px 0 0; font-size: 10.5px; color: #A0A4A9; text-align: center;">Toque no gráfico para ver os detalhes de uma medição.</p>
+        </sc-if>
+      </section>
+
+      <sc-if value="{{ temGraficoFC }}" hint-placeholder-val="{{ false }}">
+        <section style="background: #fff; border: 1px solid #E3DFD7; border-radius: 18px; padding: 16px 14px;">
+          <div style="margin-bottom: 12px;">
+            <h2 style="margin: 0; font-size: 14.5px; font-weight: 600;">Frequência cardíaca</h2>
+            <p style="margin: 2px 0 0; font-size: 11.5px; color: #8A8F96;">bpm · faixa de repouso 60–100</p>
+          </div>
+          <div>{{ graficoFC }}</div>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; padding-top: 11px; border-top: 1px solid #F0EEE8; text-align: center;">
+            <div><span style="display: block; font-size: 9.5px; letter-spacing: 0.09em; text-transform: uppercase; color: #8A8F96; font-weight: 600; margin-bottom: 4px;">Média</span><strong style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 600;">{{ fcMediaTxt }}</strong></div>
+            <div><span style="display: block; font-size: 9.5px; letter-spacing: 0.09em; text-transform: uppercase; color: #8A8F96; font-weight: 600; margin-bottom: 4px;">Mín · Máx</span><strong style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 600;">{{ fcFaixaTxt }}</strong></div>
+            <div><span style="display: block; font-size: 9.5px; letter-spacing: 0.09em; text-transform: uppercase; color: #8A8F96; font-weight: 600; margin-bottom: 4px;">Em repouso</span><strong style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 600;">{{ fcRepousoTxt }}</strong></div>
+          </div>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{ temSemana }}" hint-placeholder-val="{{ false }}">
+        <section style="background: #fff; border: 1px solid #E3DFD7; border-radius: 18px; padding: 16px 14px;">
+          <div style="margin-bottom: 12px;">
+            <h2 style="margin: 0; font-size: 14.5px; font-weight: 600;">Esta semana × anterior</h2>
+            <p style="margin: 2px 0 0; font-size: 11.5px; color: #8A8F96;">{{ rotuloSemana }}</p>
+          </div>
+          <sc-if value="{{ temGraficoSemana }}" hint-placeholder-val="{{ true }}">
+            <div>{{ graficoSemana }}</div>
+            <p style="margin: 6px 0 0; font-size: 11.5px; color: #8A8F96; text-align: center;">Sistólica média por dia da semana</p>
+            <div style="display: flex; gap: 12px; font-size: 10.5px; color: #6A7078; margin: 9px 0 14px; flex-wrap: wrap;">
+              <span style="display: flex; align-items: center; gap: 5px;"><i style="width: 13px; height: 3px; background: #4A5058; display: block; border-radius: 2px;"></i>Esta semana</span>
+              <span style="display: flex; align-items: center; gap: 5px;"><i style="width: 13px; height: 3px; background: #C3BFB4; display: block; border-radius: 2px;"></i>Semana anterior</span>
+            </div>
+          </sc-if>
+          <div style="display: flex; flex-direction: column; gap: 9px;">
+            <sc-for list="{{ comparativoSemana }}" as="c" hint-placeholder-count="4">
+              <div style="display: flex; align-items: baseline; gap: 8px; font-size: 12.5px; padding-bottom: 8px; border-bottom: 1px solid #F4F2EC;">
+                <span style="color: #4A5058; flex: 1;">{{ c.rotulo }}</span>
+                <strong style="font-family: 'IBM Plex Mono', monospace; font-size: 14.5px; font-weight: 600;">{{ c.valor }}</strong>
+                <sc-if value="{{ c.temAnterior }}" hint-placeholder-val="{{ true }}">
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #B4B8B2; text-decoration: line-through; min-width: 30px; text-align: right;">{{ c.anterior }}</span>
+                </sc-if>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; color: {{ c.deltaCor }}; background: {{ c.deltaBg }};">{{ c.delta }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{ temHorarios }}" hint-placeholder-val="{{ false }}">
+        <section style="background: #fff; border: 1px solid #E3DFD7; border-radius: 18px; padding: 16px 14px;">
+          <div style="margin-bottom: 12px;">
+            <h2 style="margin: 0; font-size: 14.5px; font-weight: 600;">Manhã × noite</h2>
+            <p style="margin: 2px 0 0; font-size: 11.5px; color: #8A8F96;">Média por horário da medição</p>
+          </div>
+          <div>{{ graficoHorarios }}</div>
+          <p style="margin: 14px 0 0; padding-top: 12px; border-top: 1px solid #F0EEE8; font-size: 12.8px; color: #4A5058; line-height: 1.55; text-wrap: pretty;">{{ notaHorarios }}</p>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{ graficoTem }}" hint-placeholder-val="{{ true }}">
+        <section style="background: #fff; border: 1px solid #E3DFD7; border-radius: 18px; padding: 16px 14px;">
+          <div style="margin-bottom: 12px;">
+            <h2 style="margin: 0; font-size: 14.5px; font-weight: 600;">Distribuição das medições</h2>
+            <p style="margin: 2px 0 0; font-size: 11.5px; color: #8A8F96;">{{ mediaDetalhe }}</p>
+          </div>
+          <div style="display: flex; height: 14px; border-radius: 999px; overflow: hidden; gap: 2px; background: #F0EEE8;">
+            <sc-for list="{{ distribuicaoV2 }}" as="d" hint-placeholder-count="4">
+              <span style="display: block; width: {{ d.largura }}; background: {{ d.cor }};"></span>
+            </sc-for>
+          </div>
+          <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 7px;">
+            <sc-for list="{{ distribuicaoV2Ordenada }}" as="d" hint-placeholder-count="4">
+              <div style="display: flex; align-items: center; gap: 8px; font-size: 12px;">
+                <i style="width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; background: {{ d.cor }};"></i>
+                <span style="color: #4A5058;">{{ d.nome }}</span>
+                <span style="margin-left: auto; font-family: 'IBM Plex Mono', monospace; color: #6A7078; font-size: 11.5px;">{{ d.resumo }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+      </sc-if>
+
+      <section style="background: #fff; border: 1px solid #E3DFD7; border-radius: 18px; padding: 16px 14px;">
+        <div style="margin-bottom: 12px;">
+          <h2 style="margin: 0; font-size: 14.5px; font-weight: 600;">Regularidade</h2>
+          <p style="margin: 2px 0 0; font-size: 11.5px; color: #8A8F96;">Dias com medição nos últimos 30</p>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px;">
+          <sc-for list="{{ regularidade }}" as="d" hint-placeholder-count="30">
+            <i title="{{ d.titulo }}" style="aspect-ratio: 1; border-radius: 5px; display: block; background: {{ d.cor }}; opacity: {{ d.opacidade }};"></i>
+          </sc-for>
+        </div>
+        <p style="margin: 12px 0 0; font-size: 12.8px; color: #4A5058; line-height: 1.55;">{{ notaRegularidade }}</p>
+      </section>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <sc-for list="{{ metricasV2 }}" as="m" hint-placeholder-count="4">
+          <div style="background: #fff; border: 1px solid #E3DFD7; border-radius: 14px; padding: 13px;">
+            <span style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8F96; font-weight: 600;">{{ m.rotulo }}</span>
+            <p style="margin: 7px 0 1px; font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 500; line-height: 1; color: {{ m.cor }};">{{ m.valor }}</p>
+            <span style="font-size: 10.5px; color: #8A8F96;">{{ m.nota }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <section style="background: #fff; border: 1px solid #E3DFD7; border-radius: 18px; padding: 16px 14px;">
+        <h2 style="margin: 0 0 6px; font-size: 14.5px; font-weight: 600;">Tendência de risco</h2>
+        <p style="margin: 0; font-size: 12.8px; color: #4A5058; line-height: 1.55; text-wrap: pretty;">{{ tendenciaTexto }}</p>
+      </section>
+    </main>
+  </sc-if>`
+);
+
 const encodedTemplate = JSON.stringify(template)
   .replace(/<\//g, '<\\u002F')
   .replace(/<!--/g, '<\\u0021--');
