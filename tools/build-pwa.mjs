@@ -99,7 +99,17 @@ const EXPLICA = {
 const ORDEM = ['Pressão baixa', 'Normal', 'Pré-hipertensão', 'HAS estágio 1', 'HAS estágio 2', 'HAS estágio 3'];
 const NIVEL = { 'Pressão baixa': 1, 'Normal': 0, 'Pré-hipertensão': 2, 'HAS estágio 1': 3, 'HAS estágio 2': 4, 'HAS estágio 3': 5 };
 const POS = { 'Pressão baixa': 5, 'Normal': 12, 'Pré-hipertensão': 34, 'HAS estágio 1': 58, 'HAS estágio 2': 80, 'HAS estágio 3': 96 };
-const PIX_COPIA_COLA = '00020101021126580014br.gov.bcb.pix0136e82dca74-aff0-4dad-bffc-72a785ec89465204000053039865802BR5917DANIEL A DE PAULA6011DIVINOPOLIS62070503***6304FF7B';`
+const PIX_COPIA_COLA = '00020101021126580014br.gov.bcb.pix0136e82dca74-aff0-4dad-bffc-72a785ec89465204000053039865802BR5917DANIEL A DE PAULA6011DIVINOPOLIS62070503***6304FF7B';
+function irAoTopo() {
+  const subir = function () {
+    try { window.scrollTo(0, 0); } catch (err) { /* ignora */ }
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+  };
+  subir();
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(function () { subir(); requestAnimationFrame(subir); });
+  else setTimeout(subir, 0);
+}`
 );
 
 replaceSection(
@@ -336,7 +346,7 @@ replaceSection(
         </section>
       </sc-if>
 
-      <section data-v2-card="" style="overflow:hidden;padding:0;background:linear-gradient(145deg,#FFFDFC,#F2F8F5);border-color:#DCE9E4;">
+      <section data-v2-card="" sc-camel-on-click="{{ abrirApoio }}" style="overflow:hidden;padding:0;background:linear-gradient(145deg,#FFFDFC,#F2F8F5);border-color:#DCE9E4;cursor:pointer;">
         <div style="display:flex;align-items:center;gap:14px;padding:17px 16px;">
           <img src="assets/illustration-apoio.webp" alt="Xícara com coração" style="width:92px;height:92px;object-fit:cover;border-radius:22px;flex-shrink:0;">
           <div style="min-width:0;">
@@ -345,7 +355,7 @@ replaceSection(
             <p style="margin:0;font-size:12px;line-height:1.45;color:#65716E;">Todo mundo se ajuda um pouquinho, e o app continua ajudando a gente a se cuidar.</p>
           </div>
         </div>
-        <button sc-camel-on-click="{{ abrirApoio }}" style="width:100%;border:none;border-top:1px solid #DCE9E4;background:#fff;color:#0F6B62;padding:14px;font-size:14px;font-weight:650;cursor:pointer;">Quero dar uma força</button>
+        <button sc-camel-on-click="{{ abrirApoio }}" style="width:100%;border:none;border-top:1px solid #DCE9E4;background:#fff;color:#0F6B62;padding:14px;font-size:14px;font-weight:650;cursor:pointer;">Quer dar uma força?</button>
       </section>
     </main>
   </sc-if>`
@@ -579,16 +589,20 @@ replaceOnce(
   "      abrirNova: function () { self.setState({ aba: 'nova', erro: '', form: Object.assign({}, self.state.form, { quando: localInput(new Date()) }) }); },\n      voltarInicio: function () { self.setState({ aba: 'inicio' }); },",
   `      abrirNova: function () {
         const proximaAba = self.state.pularPreparo ? 'nova' : 'preparo';
+        irAoTopo();
         self.setState({
           aba: proximaAba, editandoId: null, detalhesAbertos: false, erro: '', aviso: '',
           form: { sis: '', dia: '', pulso: '', braco: self.state.form.braco || 'Esquerdo', posicao: self.state.form.posicao || 'Sentado', humor: '', obs: '', quando: localInput(new Date()) }
         });
+        irAoTopo();
       },
-      continuarNova: function () { self.setState({ aba: 'nova', erro: '', aviso: '' }); },
+      continuarNova: function () { irAoTopo(); self.setState({ aba: 'nova', erro: '', aviso: '' }); irAoTopo(); },
       naoMostrarPreparo: function () {
+        irAoTopo();
         self.atualizar({ pularPreparo: true, aba: 'nova', erro: '', aviso: '' });
+        irAoTopo();
       },
-      abrirApoio: function () { self.setState({ aba: 'apoio', pixCopiado: false, aviso: '', erro: '' }); },
+      abrirApoio: function () { irAoTopo(); self.setState({ aba: 'apoio', pixCopiado: false, aviso: '', erro: '' }); irAoTopo(); },
       rotuloPix: st.pixCopiado ? 'Código Pix copiado! ✓' : 'Copiar código Pix',
       copiarPix: function () {
         const concluir = function () {
@@ -607,8 +621,8 @@ replaceOnce(
         if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(PIX_COPIA_COLA).then(concluir, copiarAlternativo);
         else copiarAlternativo();
       },
-      cancelarFormulario: function () { self.cancelarFormulario(); },
-      voltarInicio: function () { self.setState({ aba: 'inicio' }); },`
+      cancelarFormulario: function () { irAoTopo(); self.cancelarFormulario(); irAoTopo(); },
+      voltarInicio: function () { irAoTopo(); self.setState({ aba: 'inicio' }); irAoTopo(); },`
 );
 
 replaceOnce(
@@ -915,7 +929,7 @@ replaceOnce(
         <span style="font-size:18px;font-weight:650;letter-spacing:-.02em;">Antes de medir</span>
       </header>
       <main style="padding:24px 20px 28px;display:flex;flex-direction:column;gap:14px;">
-        <img src="assets/illustration-preparo.webp" alt="Pessoa medindo a pressão com o braço apoiado" style="width:100%;height:230px;object-fit:cover;object-position:center 43%;border-radius:26px;box-shadow:0 12px 30px rgba(15,107,98,.09);">
+        <img src="assets/illustration-preparo.webp" alt="Pessoa medindo a pressão com o braço apoiado" style="width:100%;max-width:250px;align-self:center;height:auto;aspect-ratio:2/3;object-fit:contain;background:#FBF7F0;border-radius:26px;box-shadow:0 12px 30px rgba(15,107,98,.09);">
         <div style="text-align:center;margin-bottom:2px;"><h1 style="margin:0 0 7px;font-size:23px;line-height:1.2;color:#17312E;letter-spacing:-.03em;">Vamos preparar tudo?</h1><p style="margin:0;font-size:13px;line-height:1.5;color:#6A7774;">Três cuidados rápidos para deixar a medição mais consistente.</p></div>
         <section data-v2-card="" style="padding:4px 16px;">
           <div style="display:flex;align-items:center;gap:13px;padding:15px 0;border-bottom:1px solid #EEEAE3;"><span style="width:42px;height:42px;border-radius:14px;background:#E7F3F0;color:#0F766C;display:grid;place-items:center;font-size:21px;flex-shrink:0;">◷</span><strong style="font-size:15px;font-weight:600;color:#27302E;">Descanse um pouquinho</strong></div>
@@ -1625,6 +1639,16 @@ replaceSection(
       </section>
     </main>
   </sc-if>`
+);
+
+replaceOnce(
+  'rolar para o topo ao trocar de tela',
+  '  persistir(extra) {',
+  `  componentDidUpdate(prevProps, prevState) {
+    if (prevState && prevState.aba !== this.state.aba) irAoTopo();
+  }
+
+  persistir(extra) {`
 );
 
 const encodedTemplate = JSON.stringify(template)
