@@ -386,6 +386,14 @@ replaceSection(
           </label>
         </section>
 
+        <label data-v2-card="" data-v2-input="" style="padding: 14px 15px; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: linear-gradient(140deg,#FFF9F7,#FDF2EE); border-color: #F2D3C8;">
+          <span style="min-width: 0;">
+            <span style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:#BE4A2E;background:#FBE7E0;border-radius:999px;padding:3px 9px;letter-spacing:.04em;"><svg sc-camel-view-box="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-5 3 10 2.5-7 1.8 4H21"></path></svg>BATIMENTOS</span><small style="margin-left:7px;font-size:10.5px;font-weight:600;color:#A2837A;">opcional</small>
+            <span style="display:block;margin-top:5px;font-size:12px;line-height:1.35;color:#7B5A50;">O número menor do aparelho</span>
+          </span>
+          <span style="display:flex;align-items:baseline;gap:5px;background:#fff;border:1px dashed #E0C4B9;border-radius:12px;padding:7px 11px;flex-shrink:0;"><input aria-label="Batimentos por minuto" type="number" inputmode="numeric" placeholder="72" value="{{ form.pulso }}" sc-camel-on-change="{{ onPulso }}" style="width:58px;border:none;background:transparent;padding:0;font-family:'IBM Plex Mono',monospace;font-size:27px;line-height:1.1;text-align:right;color:#BE4A2E;"><small style="color:#A2837A;">bpm</small></span>
+        </label>
+
         <section style="border-radius: 20px; padding: 17px; background: #E7F3F0; border: 1px solid rgba(15,107,98,0.12);">
           <span style="font-size:12px;color:#4F6864;">Referência educativa <small style="font-weight:400;opacity:.8;">· adultos</small></span>
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 3px;"><strong style="font-size: 27px; color: {{ previaCor }}; font-weight: 600;">{{ previaNome }}</strong><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #60706D;">{{ previaNota }}</span></div>
@@ -401,11 +409,6 @@ replaceSection(
           </sc-if>
         </section>
 
-        <label data-v2-card="" style="padding: 15px 17px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-          <span style="font-size: 15px; font-weight: 600;">Pulso <small style="font-weight: 400; color: #7A807D;">(opcional)</small></span>
-          <span style="display: flex; align-items: baseline; gap: 5px;"><input aria-label="Pulso" type="number" inputmode="numeric" placeholder="72" value="{{ form.pulso }}" sc-camel-on-change="{{ onPulso }}" style="width: 76px; border: none; background: transparent; padding: 0; font-family: 'IBM Plex Mono', monospace; font-size: 27px; text-align: right; color: #0A5B54;"><small style="color:#7A807D;">bpm</small></span>
-        </label>
-
         <div style="display:flex;align-items:center;gap:10px;padding:4px 2px 0;">
           <span style="width:28px;height:28px;border-radius:9px;background:#E7F3F0;color:#0F766C;display:grid;place-items:center;font-size:15px;">＋</span>
           <div><strong style="display:block;font-size:14px;color:#27302E;">Detalhes da medição</strong><span style="display:block;font-size:11.5px;color:#7A807D;margin-top:2px;">Informações opcionais que ajudam a interpretar o registro</span></div>
@@ -416,7 +419,7 @@ replaceSection(
               <div><span style="display:block;font-size:11px;color:#7A807D;font-weight:650;margin-bottom:6px;">Braço</span><div style="display:flex;gap:6px;"><button sc-camel-on-click="{{ setBracoE }}" style="flex:1;border:1px solid {{ bracoEBorda }};background:{{ bracoEBg }};color:{{ bracoECor }};border-radius:10px;padding:10px 3px;">Esquerdo</button><button sc-camel-on-click="{{ setBracoD }}" style="flex:1;border:1px solid {{ bracoDBorda }};background:{{ bracoDBg }};color:{{ bracoDCor }};border-radius:10px;padding:10px 3px;">Direito</button></div></div>
               <div><span style="display:block;font-size:11px;color:#7A807D;font-weight:650;margin-bottom:6px;">Posição</span><div style="display:flex;gap:6px;"><button sc-camel-on-click="{{ setPosS }}" style="flex:1;border:1px solid {{ posSBorda }};background:{{ posSBg }};color:{{ posSCor }};border-radius:10px;padding:10px 3px;">Sentado</button><button sc-camel-on-click="{{ setPosD }}" style="flex:1;border:1px solid {{ posDBorda }};background:{{ posDBg }};color:{{ posDCor }};border-radius:10px;padding:10px 3px;">Deitado</button></div></div>
             </div>
-            <div><span style="display:block;font-size:11px;color:#7A807D;font-weight:650;margin-bottom:7px;">Como estou me sentindo</span><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;"><sc-for list="{{ humores }}" as="h" hint-placeholder-count="5"><button sc-camel-on-click="{{ h.acao }}" title="{{ h.rotulo }}" style="border:1px solid {{ h.borda }};background:{{ h.bg }};border-radius:11px;padding:8px 2px;display:flex;flex-direction:column;align-items:center;gap:4px;"><svg sc-camel-view-box="0 0 24 24" width="23" height="23" fill="none" stroke="{{ h.cor }}" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9.2"></circle><path d="{{ h.olhos }}"></path><path d="{{ h.boca }}"></path></svg><span style="font-size:8px;color:{{ h.cor }};font-weight:650;">{{ h.rotulo }}</span></button></sc-for></div></div>
+            <div><span style="display:block;font-size:11px;color:#7A807D;font-weight:650;margin-bottom:7px;">Como estou me sentindo</span><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;align-items:end;"><sc-for list="{{ humores }}" as="h" hint-placeholder-count="5"><button sc-camel-on-click="{{ h.acao }}" title="{{ h.rotulo }}" aria-pressed="{{ h.marcado }}" style="border:{{ h.larguraBorda }} solid {{ h.borda }};background:{{ h.bg }};border-radius:13px;padding:{{ h.padding }};display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;transform:{{ h.escala }};box-shadow:{{ h.sombra }};transition:transform .16s ease,box-shadow .16s ease,background .16s ease;"><svg sc-camel-view-box="0 0 24 24" width="{{ h.tamanho }}" height="{{ h.tamanho }}" fill="none" stroke="{{ h.cor }}" stroke-width="{{ h.traco }}" stroke-linecap="round"><circle cx="12" cy="12" r="9.2"></circle><path d="{{ h.olhos }}"></path><path d="{{ h.boca }}"></path></svg><span style="font-size:8.5px;color:{{ h.cor }};font-weight:{{ h.peso }};letter-spacing:.01em;">{{ h.rotulo }}</span></button></sc-for></div></div>
             <label style="display:flex;flex-direction:column;gap:6px;"><span style="font-size:11px;color:#7A807D;font-weight:650;">Observação</span><textarea rows="2" placeholder="Sintomas, medicação, contexto…" value="{{ form.obs }}" sc-camel-on-change="{{ onObs }}" style="width:100%;border:1px solid #E4E1DA;background:#FAF9F6;border-radius:12px;padding:11px 12px;font-size:14px;resize:vertical;"></textarea></label>
           </section>
 
@@ -1642,13 +1645,47 @@ replaceSection(
 );
 
 replaceOnce(
-  'rolar para o topo ao trocar de tela',
-  '  persistir(extra) {',
-  `  componentDidUpdate(prevProps, prevState) {
-    if (prevState && prevState.aba !== this.state.aba) irAoTopo();
-  }
+  'destaque dos chips de humor',
+  `      humores: HUMORES.map(function (h) {
+        const on = st.form.humor === h.id;
+        return {
+          rotulo: h.rotulo, olhos: h.olhos, boca: h.boca,
+          cor: on ? h.cor : '#A0A4A9',
+          bg: on ? hex2rgba(h.cor, 0.1) : '#FAF9F6',
+          borda: on ? hex2rgba(h.cor, 0.45) : '#E3DFD7',
+          escala: on ? 'scale(1.06)' : 'scale(1)',
+          acao: function () { self.setState({ form: Object.assign({}, self.state.form, { humor: on ? '' : h.id }) }); }
+        };
+      }),`,
+  `      humores: HUMORES.map(function (h) {
+        const on = st.form.humor === h.id;
+        return {
+          rotulo: h.rotulo, olhos: h.olhos, boca: h.boca,
+          marcado: on ? 'true' : 'false',
+          cor: on ? '#FFFFFF' : '#8A8F96',
+          bg: on ? h.cor : '#FAF9F6',
+          borda: on ? h.cor : '#E3DFD7',
+          larguraBorda: on ? '2px' : '1px',
+          sombra: on ? '0 7px 16px ' + hex2rgba(h.cor, 0.34) : 'none',
+          escala: on ? 'scale(1.1)' : 'scale(1)',
+          padding: on ? '10px 2px' : '8px 2px',
+          tamanho: on ? 26 : 23,
+          traco: on ? 2.1 : 1.7,
+          peso: on ? 750 : 650,
+          acao: function () { self.setState({ form: Object.assign({}, self.state.form, { humor: on ? '' : h.id }) }); }
+        };
+      }),`
+);
 
-  persistir(extra) {`
+replaceOnce(
+  'rolagem ao topo direto no render',
+  `  renderVals() {
+    const st = this.state;
+    const self = this;`,
+  `  renderVals() {
+    const st = this.state;
+    const self = this;
+    if (this._abaAnterior !== st.aba) { this._abaAnterior = st.aba; irAoTopo(); }`
 );
 
 const encodedTemplate = JSON.stringify(template)
